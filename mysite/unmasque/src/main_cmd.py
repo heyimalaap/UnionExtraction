@@ -491,7 +491,10 @@ if __name__ == '__main__':
 
     # print(workload_dict)
 
-    qid = sys.argv[1]
+    try:
+        qid = sys.argv[1]
+    except:
+        qid = "testing"
     hq = workload[workload_dict[qid]]
     query = hq.query
     conn = ConnectionHelperFactory().createConnectionHelper()
@@ -500,6 +503,7 @@ if __name__ == '__main__':
     conn.config.detect_nep = hq.nep
     conn.config.use_cs2 = hq.cs2
     conn.config.detect_or = hq.orf
+    conn.config.use_having = True
 
     print(f"Flags: Union {conn.config.detect_union}, OJ {conn.config.detect_oj}, "
           f"NEP {conn.config.detect_nep}, CS2 {conn.config.use_cs2}")

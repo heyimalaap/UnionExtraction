@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Any
 
 from ...src.util.constants import UNMASQUE
 
@@ -12,6 +13,14 @@ class CommonQueries(ABC):
     def select_row_count_from_query(self, query):
         return f"select count(*) from ({query});"
 
+    def select_column_and_count_group_by_column(self, table: str, col: str):
+        return f"select {col}, count(*) from {table} group by {col};"
+    
+    def delete_from_table_where_column_does_not_have_value_val(self, table: str, col: str, val: Any, quoted=False):
+        if quoted:
+            val = f"'{val}'"
+        return f"delete from {table} where {col} != {val};"
+    
     @abstractmethod
     def get_explain_query(self, sql):
         pass
