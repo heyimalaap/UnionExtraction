@@ -5,6 +5,7 @@ from queue import Queue
 
 from ....src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from ....src.pipeline.OuterJoinPipeLine import OuterJoinPipeLine
+from ....src.pipeline.HavingPipeLine import HavingPipeLine
 from ....src.pipeline.UnionPipeLine import UnionPipeLine
 from ....src.util.constants import WAITING
 
@@ -69,9 +70,14 @@ class PipeLineFactory:
         return token
 
     def create_pipeline(self, connectionHelper):
+        use_having = connectionHelper.config.use_having
         detect_union = connectionHelper.config.detect_union
         detect_oj = connectionHelper.config.detect_oj
-        if not detect_union:
+        
+        if use_having:
+            pipe = HavingPipeLine(connectionHelper)
+            print("Having Pipeline")
+        elif not detect_union:
             if detect_oj:
                 pipe = OuterJoinPipeLine(connectionHelper)
                 print("Outer Join Pipeline")

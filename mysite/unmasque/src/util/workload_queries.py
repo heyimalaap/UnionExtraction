@@ -457,7 +457,13 @@ WHERE p.p_brand = 'Brand#53'
 			and c_nationkey = n1.n_nationkey
 			and n1.n_regionkey = r_regionkey
 			and s_nationkey = n2.n_nationkey
-			and o_orderdate between date '1995-01-01' and date '1996-12-31';""", False, False, False, False)
-
+			and o_orderdate between date '1995-01-01' and date '1996-12-31';""", False, False, False, False),
+                     TestQuery("testing", """select l_orderkey, sum(l_extendedprice * (1 - l_discount)) as revenue, o_orderdate, o_shippriority 
+											From customer, orders, lineitem 
+											Where c_custkey = o_custkey and l_orderkey = o_orderkey and 
+											o_orderdate < date '1995-03-15' and l_shipdate > date '1995-03-15' 
+											Group By l_orderkey, o_orderdate, o_shippriority 
+											Order by revenue desc, o_orderdate 
+											Limit 10;""", False, False, False, False)
                      ]
     return test_workload

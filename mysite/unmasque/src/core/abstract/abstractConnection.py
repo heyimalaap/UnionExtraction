@@ -1,5 +1,6 @@
 from abc import abstractmethod
 
+from ...util.abstract_queries import CommonQueries
 from ....src.util.constants import DBNAME, HOST, PORT, USER, PASSWORD, SCHEMA, OK
 
 
@@ -26,7 +27,7 @@ class AbstractConnectionHelper:
                 self.config.user_schema = value
 
         self.conn = None
-        self.queries = None
+        self.queries: CommonQueries = None
 
     @abstractmethod
     def set_timeout_to_2s(self):
