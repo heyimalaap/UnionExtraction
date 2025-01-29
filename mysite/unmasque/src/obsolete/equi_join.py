@@ -1,8 +1,8 @@
 import copy
 
-from mysite.unmasque.src.util.utils import get_all_combo_lists, get_datatype_from_typesList, get_dummy_val_for, \
+from ..util.utils import get_all_combo_lists, get_datatype_from_typesList, get_dummy_val_for, \
     get_val_plus_delta
-from mysite.unmasque.src.core.abstract.where_clause import WhereClause
+from ..core.abstract.where_clause import WhereClause
 
 
 def get_two_different_vals(list_type):
@@ -41,7 +41,9 @@ class EquiJoin(WhereClause):
         self.global_join_instance_dict = {}
         self.global_component_dict = {}
         self.global_join_graph = []
+        self.global_join_graph2 = [] # TODO: This is a hack. This is just a copy of global_join_graph, except with table name tagged along with the attribute
         self.global_key_attributes = []
+        self.global_key_attributes2 = [] # TODO: This is a hack. This is just a copy of global_join_graph, except with table name tagged along with the attribute
 
     def doActualJob(self, args=None):
         query = self.extract_params_from_args(args)
@@ -55,8 +57,9 @@ class EquiJoin(WhereClause):
 
     def assign_value_to_list(self, list1, temp_copy, val1):
         for val in list1:
+            qualified_table_name = self.get_fully_qualified_table_name(str(val[0]))
             self.connectionHelper.execute_sql(
-                [self.connectionHelper.queries.update_tab_attrib_with_value(str(val[1]), str(val[0]), val1)])
+                [self.connectionHelper.queries.update_tab_attrib_with_value(qualified_table_name, str(val[1]), val1)])
             index = temp_copy[val[0]][0].index(val[1])
             mutated_list = copy.deepcopy(list(temp_copy[val[0]][1]))
             mutated_list[index] = str(val1)
@@ -104,10 +107,11 @@ class EquiJoin(WhereClause):
                     join_graph.append(copy.deepcopy(join_keys))
 
             for val in join_keys:
+                qualified_table_name = self.get_fully_qualified_table_name(val[0])
+                qualified_dmin_table_name = self.get_fully_qualified_table_name(self.connectionHelper.queries.get_dmin_tabname(val[0]))
                 self.connectionHelper.execute_sql(
-                    [self.connectionHelper.queries.insert_into_tab_select_star_fromtab(val[0],
-                                                                                       self.connectionHelper.queries.get_dmin_tabname(
-                                                                                           val[0]))])
+                    [self.connectionHelper.queries.insert_into_tab_select_star_fromtab(qualified_table_name, qualified_dmin_table_name)]
+                )
         self.refine_join_graph(join_graph)
 
     def refine_join_graph(self, join_graph):
@@ -116,7 +120,11 @@ class EquiJoin(WhereClause):
         self.global_key_attributes = []
         for elt in join_graph:
             temp = []
+            temp2 = [] # TODO: This is a hack
             for val in elt:
                 temp.append(val[1])
+                temp2.append(val) # TODO: This is a hack
                 self.global_key_attributes.append(val[1])
+                self.global_key_attributes2.append(val) # TODO: This is a hack
             self.global_join_graph.append(copy.deepcopy(temp))
+            self.global_join_graph2.append(copy.deepcopy(temp2)) # TODO: This is a hack

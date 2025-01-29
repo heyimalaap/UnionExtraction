@@ -20,6 +20,7 @@ class Minimizer(AppExtractorBase, ABC):
         self.all_relations = list(all_sizes.keys())
         self.all_relations.sort()
         self.error_table = None
+        self.global_min_instance_dict = {}
 
     def getCoreSizes(self):
         sizes = {}
@@ -185,3 +186,14 @@ class Minimizer(AppExtractorBase, ABC):
                                                         self.get_fully_qualified_table_name(tab)),
                 drop_fn(tab), self.connectionHelper.queries.alter_table_rename_to(
                     self.get_fully_qualified_table_name(self.connectionHelper.queries.get_dmin_tabname(tab)), tab)])
+
+    def populate_dict_info(self):
+        # POPULATE MIN INSTANCE DICT
+        import pandas as pd
+        for tabname in self.core_relations:
+            self.global_min_instance_dict[tabname] = []
+            sql_query = pd.read_sql_query(self.connectionHelper.queries.get_star(tabname), self.connectionHelper.conn)
+            df = pd.DataFrame(sql_query)
+            self.global_min_instance_dict[tabname].append(tuple(df.columns))
+            for index, row in df.iterrows():
+                self.global_min_instance_dict[tabname].append(tuple(row))

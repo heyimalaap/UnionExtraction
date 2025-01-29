@@ -1,9 +1,12 @@
+import copy
+
 from ...src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from ..core.elapsed_time import create_zero_time_profile
-from ...src.util.constants import RUNNING, START, SAMPLING, RESTORE_DB, DONE, DB_MINIMIZATION
+from ...src.util.constants import RUNNING, ERROR, START, SAMPLING, RESTORE_DB, DONE, DB_MINIMIZATION, EQUALITY
 from ...src.core.db_restorer import DbRestorer
 from ...src.core.cs2 import Cs2
 from ...src.core.bruteforce_minimizer import BruteForceMinimizer
+from ...src.obsolete.equi_join import EquiJoin
 
 class HavingPipeLine(ExtractionPipeLine):
     def __init__(self, connectionHelper, name="Having PipeLine"):
@@ -58,5 +61,24 @@ class HavingPipeLine(ExtractionPipeLine):
         check = bfm.doJob(query)
         self.update_state(DB_MINIMIZATION + DONE)
         time_profile.update_for_view_minimization(bfm.local_elapsed_time, bfm.app_calls)
+        if not check or not bfm.done:
+            self.error = "Cannot do database minimization"
+            self.logger.error(self.error)
+            self.update_state(ERROR)
+            self.info[DB_MINIMIZATION] = None
+            return False, time_profile
+        self.db_restorer.update_last_restored_size(bfm.all_sizes)
+        self.info[DB_MINIMIZATION] = bfm.global_min_instance_dict
+        self.global_min_instance_dict = copy.deepcopy(bfm.global_min_instance_dict)
+        
+        """
+        EquiJoin extraction (U1)
+        """
+        self.update_state(EQUALITY + START)
+        self.update_state(EQUALITY + RUNNING)
+        self.equi_join = EquiJoin(self.connectionHelper, self.key_lists, self.core_relations, self.global_min_instance_dict)
+        check = self.equi_join.doJob(query)
+        self.update_state(EQUALITY + DONE)
+        time_profile.update_for_where_clause(self.equi_join.local_elapsed_time, self.equi_join.app_calls)
 
         return False, time_profile

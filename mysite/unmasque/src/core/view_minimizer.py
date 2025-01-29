@@ -24,7 +24,6 @@ class ViewMinimizer(Minimizer):
                  sampling_status):
         super().__init__(connectionHelper, core_relations, all_sizes, "View_Minimizer")
         self.cs2_passed = sampling_status
-        self.global_min_instance_dict = {}
 
     def doActualJob(self, args=None):
         query = self.extract_params_from_args(args)
@@ -115,13 +114,3 @@ class ViewMinimizer(Minimizer):
             end_ctid, start_ctid = self.get_start_and_end_ctids(core_sizes, query, tabname, dirty_tab)
             core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, dirty_tab)
         return core_sizes
-
-    def populate_dict_info(self):
-        # POPULATE MIN INSTANCE DICT
-        for tabname in self.core_relations:
-            self.global_min_instance_dict[tabname] = []
-            sql_query = pd.read_sql_query(self.connectionHelper.queries.get_star(tabname), self.connectionHelper.conn)
-            df = pd.DataFrame(sql_query)
-            self.global_min_instance_dict[tabname].append(tuple(df.columns))
-            for index, row in df.iterrows():
-                self.global_min_instance_dict[tabname].append(tuple(row))

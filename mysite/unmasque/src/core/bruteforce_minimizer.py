@@ -116,5 +116,6 @@ class BruteForceMinimizer(Minimizer):
             
             is_minimized = not did_shrink
         
+        self.populate_dict_info()
         self.logger.debug("Finished bruteforce minimizer") 
         return True
