@@ -200,7 +200,7 @@ def get_val_plus_delta(datatype, min_val, delta):
     try:
         if datatype == 'date':
             plus_delta = min_val + datetime.timedelta(days=delta)
-        elif datatype == 'int':
+        elif datatype in ['int', 'integer']:
             plus_delta = min_val + delta
         elif datatype == 'numeric':
             plus_delta = float(Decimal(min_val) + Decimal(delta))

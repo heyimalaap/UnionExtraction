@@ -93,10 +93,12 @@ class EquiJoin(WhereClause):
                 temp_copy = {tab: self.global_min_instance_dict[tab] for tab in self.core_relations}
 
                 # Assign two different values to two lists in database
+                self.connectionHelper.begin_transaction()
                 self.assign_values_to_lists(list1, list2, temp_copy, val1, val2)
 
                 # CHECK THE RESULT
                 new_result = self.app.doJob(query)
+                self.connectionHelper.rollback_transaction()
                 if len(new_result) > 1:
                     remove_edge_from_join_graph_dicts(join_keys, list1, list2, global_key_lists)
                     break
@@ -106,12 +108,12 @@ class EquiJoin(WhereClause):
                     global_key_lists.remove(keys)
                     join_graph.append(copy.deepcopy(join_keys))
 
-            for val in join_keys:
-                qualified_table_name = self.get_fully_qualified_table_name(val[0])
-                qualified_dmin_table_name = self.get_fully_qualified_table_name(self.connectionHelper.queries.get_dmin_tabname(val[0]))
-                self.connectionHelper.execute_sql(
-                    [self.connectionHelper.queries.insert_into_tab_select_star_fromtab(qualified_table_name, qualified_dmin_table_name)]
-                )
+            # for val in join_keys:
+            #     qualified_table_name = self.get_fully_qualified_table_name(val[0])
+            #     qualified_dmin_table_name = self.get_fully_qualified_table_name(self.connectionHelper.queries.get_dmin_tabname(val[0]))
+            #     self.connectionHelper.execute_sql(
+            #         [self.connectionHelper.queries.insert_into_tab_select_star_fromtab(qualified_table_name, qualified_dmin_table_name)]
+            #     )
         self.refine_join_graph(join_graph)
 
     def refine_join_graph(self, join_graph):

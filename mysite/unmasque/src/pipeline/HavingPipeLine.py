@@ -2,11 +2,12 @@ import copy
 
 from ...src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from ..core.elapsed_time import create_zero_time_profile
-from ...src.util.constants import RUNNING, ERROR, START, SAMPLING, RESTORE_DB, DONE, DB_MINIMIZATION, EQUALITY
+from ...src.util.constants import RUNNING, ERROR, START, SAMPLING, RESTORE_DB, DONE, DB_MINIMIZATION, EQUALITY, GROUP_BY
 from ...src.core.db_restorer import DbRestorer
 from ...src.core.cs2 import Cs2
 from ...src.core.bruteforce_minimizer import BruteForceMinimizer
 from ...src.obsolete.equi_join import EquiJoin
+from ...src.core.having_groupby import GroupBy
 
 class HavingPipeLine(ExtractionPipeLine):
     def __init__(self, connectionHelper, name="Having PipeLine"):
@@ -70,6 +71,7 @@ class HavingPipeLine(ExtractionPipeLine):
         self.db_restorer.update_last_restored_size(bfm.all_sizes)
         self.info[DB_MINIMIZATION] = bfm.global_min_instance_dict
         self.global_min_instance_dict = copy.deepcopy(bfm.global_min_instance_dict)
+        self.global_all_attribs = bfm.global_all_attribs
         
         """
         EquiJoin extraction (U1)
@@ -80,5 +82,14 @@ class HavingPipeLine(ExtractionPipeLine):
         check = self.equi_join.doJob(query)
         self.update_state(EQUALITY + DONE)
         time_profile.update_for_where_clause(self.equi_join.local_elapsed_time, self.equi_join.app_calls)
+        
+        """
+        Group by extraction
+        """
+        self.update_state(GROUP_BY + START)
+        self.group_by = GroupBy(self.connectionHelper, self.core_relations, self.global_all_attribs, self.all_sizes, self.equi_join.global_join_graph2)
+        self.update_state(GROUP_BY + RUNNING)
+        check = self.group_by.doJob(query)
+        self.update_state(GROUP_BY + DONE)
 
         return False, time_profile
