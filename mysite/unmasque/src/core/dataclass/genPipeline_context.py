@@ -1,7 +1,7 @@
 import copy
 from typing import List, Tuple
 
-from frozenlist._frozenlist import FrozenList
+from frozenlist import FrozenList
 
 from ..aoa import InequalityPredicate
 from ..filter import Filter

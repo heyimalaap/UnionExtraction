@@ -71,9 +71,12 @@ class TpchSanitizer:
         self.drop_derived_relations(table)
         working_table = self.get_fully_qualified_table_name(table)
         original_table = self.get_original_table_name(table)
+        # self.connectionHelper.execute_sqls_with_DictCursor(
+        #     [self.connectionHelper.queries.create_table_like(working_table, original_table),
+        #      self.connectionHelper.queries.insert_into_tab_select_star_fromtab(working_table, original_table)],
+        #     self.logger)
         self.connectionHelper.execute_sqls_with_DictCursor(
-            [self.connectionHelper.queries.create_table_like(working_table, original_table),
-             self.connectionHelper.queries.insert_into_tab_select_star_fromtab(working_table, original_table)],
+            [self.connectionHelper.queries.create_table_as_select_star_from(working_table, original_table)],
             self.logger)
         self.connectionHelper.commit_transaction()
         self.logger.debug(f"... done")

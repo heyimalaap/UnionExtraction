@@ -4,7 +4,7 @@ import random
 from datetime import date, timedelta
 from typing import Union
 
-from frozenlist._frozenlist import FrozenList
+from frozenlist import FrozenList
 
 from .MutationPipeLineBase import MutationPipeLineBase
 from ..dataclass.genPipeline_context import GenPipelineContext

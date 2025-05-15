@@ -92,7 +92,7 @@ o_orderkey = l_orderkey and l_commitdate < l_receiptdate and
 l_shipdate < l_commitdate and l_receiptdate >= '1994-01-01' and
 l_receiptdate < '1995-01-01' and l_extendedprice <= o_totalprice
 and l_extendedprice <= 70000 and o_totalprice > 60000 Group By
-l_shipmode Order By l_shipmode;""", True, False, False, False),
+l_shipmode Order By l_shipmode;""", False, False, False, False),
                      TestQuery("A2", """Select o_orderpriority, count(*) as order_count From orders, lineitem
 Where l_orderkey = o_orderkey and o_orderdate >= '1993-07-01' and
 o_orderdate < '1993-10-01' and l_commitdate <= l_receiptdate Group
@@ -475,11 +475,27 @@ where
         and n_name = 'FRANCE'
         and ps_availqty > (select min(c_acctbal) from customer)
 order by
-        s_name;""", False, False, False, False)
+        s_name;""", False, False, False, False),
+                     TestQuery("testing", """select sum(l_extendedprice * (1 - l_discount)) as revenue, o_orderdate, o_shippriority 
+     From customer, orders, lineitem 
+     Where c_custkey = o_custkey and l_orderkey = o_orderkey and 
+     o_orderdate < date '1995-03-15' and l_shipdate > date '1995-03-15' and l_tax >= -2
+     Group By o_orderdate, o_shippriority 
+     having avg(o_totalprice) >= 8000.0 and avg(l_discount) <= 0.5
+     Order by revenue desc, o_orderdate 
+     Limit 10;""", False, False, False, False)
 
                      ]
     return test_workload
 
+#                      TestQuery("testing", """select sum(l_extendedprice * (1 - l_discount)) as revenue, o_orderdate, o_shippriority 
+#      From customer, orders, lineitem 
+#      Where c_custkey = o_custkey and l_orderkey = o_orderkey and 
+#      o_orderdate < date '1995-03-15' and l_shipdate > date '1995-03-15' and l_tax >= -2
+#      Group By o_orderdate, o_shippriority 
+#      having avg(o_totalprice) >= 8000.0 and avg(l_discount) <= 0.5
+#      Order by revenue desc, o_orderdate 
+#      Limit 10;""", False, False, False, False)
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
@@ -495,6 +511,7 @@ if __name__ == '__main__':
         qid = sys.argv[1]
     except:
         qid = "testing"
+
     hq = workload[workload_dict[qid]]
     query = hq.query
     conn = ConnectionHelperFactory().createConnectionHelper()
@@ -503,6 +520,7 @@ if __name__ == '__main__':
     conn.config.detect_nep = hq.nep
     conn.config.use_cs2 = hq.cs2
     conn.config.detect_or = hq.orf
+    # conn.config.use_having = False
     conn.config.use_having = True
 
     print(f"Flags: Union {conn.config.detect_union}, OJ {conn.config.detect_oj}, "

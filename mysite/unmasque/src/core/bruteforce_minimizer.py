@@ -105,7 +105,7 @@ class BruteForceMinimizer(Minimizer):
                     )
                 ])
                 
-                if self.sanity_check(self.query):
+                if self.query_result_no_full_nullfree_row(self.query):
                     did_shrink = True
                     self.connectionHelper.commit_transaction()
                     minimized_set.add((table, attrib))

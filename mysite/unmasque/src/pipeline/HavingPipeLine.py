@@ -8,6 +8,8 @@ from ...src.core.cs2 import Cs2
 from ...src.core.bruteforce_minimizer import BruteForceMinimizer
 from ...src.obsolete.equi_join import EquiJoin
 from ...src.core.having_groupby import GroupBy
+from ...src.core.having_predicate_extraction import PredicateExtractor
+from ...src.core.dataclass.genPipeline_context import GenPipelineContext
 
 class HavingPipeLine(ExtractionPipeLine):
     def __init__(self, connectionHelper, name="Having PipeLine"):
@@ -17,6 +19,10 @@ class HavingPipeLine(ExtractionPipeLine):
         time_profile = create_zero_time_profile()
         
         check, time_profile = self._mutation_pipeline(core_relations, query, time_profile)
+        
+        self.__gen_pipeline_shim() # Compat with other pipelines
+                                   # TODO: This is a hack; There is a much neater way of doing this
+                                   #       but that will require a huge refactor.
     
     def _mutation_pipeline(self, core_relations, query, time_profile, restore_details=None):
         self.update_state(RESTORE_DB + START)
@@ -91,5 +97,18 @@ class HavingPipeLine(ExtractionPipeLine):
         self.update_state(GROUP_BY + RUNNING)
         check = self.group_by.doJob(query)
         self.update_state(GROUP_BY + DONE)
+        
+        """
+        Predicate Extraction
+        """
+        self.pred_extraction = PredicateExtractor(self.connectionHelper, self.core_relations, self.global_all_attribs, self.group_by.attrib_types_dict, self.group_by.groupby_attribs, self.all_sizes, self.global_pk_dict, self.equi_join.global_join_graph2)
+        check = self.pred_extraction.doJob(query)
 
-        return False, time_profile
+        return True, time_profile
+
+    def __gen_pipeline_shim(self):
+        self.genPipelineCtx = GenPipelineContext(self.core_relations, None, None, self.global_min_instance_dict, [])
+        
+        self.genPipelineCtx.global_join_graph = self.equi_join.global_join_graph
+        self.genPipelineCtx.filter_in_predicates = []
+        self.genPipelineCtx.filter_attrib_dict = self.pred_extraction.filter_attrib_dict

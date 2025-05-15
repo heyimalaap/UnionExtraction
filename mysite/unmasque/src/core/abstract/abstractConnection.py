@@ -110,7 +110,7 @@ class AbstractConnectionHelper:
         return self.cur_execute_sql_fetch_one_0(cur, sql, logger)
 
     @abstractmethod
-    def execute_sql_fetchall(self, sql, logger=None):
+    def execute_sql_fetchall(self, sql, logger=None) -> (list | list):
         pass
 
     def get_cursor(self):

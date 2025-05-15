@@ -33,13 +33,18 @@ class Minimizer(AppExtractorBase, ABC):
     def extract_params_from_args(self, args):
         return args[0]
 
-    def sanity_check(self, query):
+    def sanity_check(self, query, critical=True):
         # SANITY CHECK
         new_result = self.app.doJob(query)
         if self.app.isQ_result_no_full_nullfree_row(new_result):
-            self.logger.error("Error: Query out of extractable domain\n")
+            if critical:
+                self.logger.error("Error: Query out of extractable domain\n")
             return False
         return True
+    
+    def query_result_no_full_nullfree_row(self, query):
+        new_result = self.app.doJob(query)
+        return not self.app.isQ_result_no_full_nullfree_row(new_result)
 
     def create_view_execute_app_drop_view(self,
                                           end_ctid,

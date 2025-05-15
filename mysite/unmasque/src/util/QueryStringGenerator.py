@@ -1,7 +1,7 @@
 import copy
 from _decimal import Decimal
 
-from frozenlist._frozenlist import FrozenList
+from frozenlist import FrozenList
 
 from .aoa_utils import remove_item_from_list, find_tables_from_predicate, get_tab, get_attrib, \
     get_LB, get_op, get_UB, add_item_to_list

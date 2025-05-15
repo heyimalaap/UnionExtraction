@@ -2,7 +2,7 @@ import ast
 import copy
 import math
 
-from frozenlist._frozenlist import FrozenList
+from frozenlist import FrozenList
 
 from .dataclass.genPipeline_context import GenPipelineContext
 from .projection import get_param_values_external

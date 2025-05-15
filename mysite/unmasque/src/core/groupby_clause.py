@@ -1,6 +1,6 @@
 import ast
 
-from frozenlist._frozenlist import FrozenList
+from frozenlist import FrozenList
 
 from .dataclass.genPipeline_context import GenPipelineContext
 
