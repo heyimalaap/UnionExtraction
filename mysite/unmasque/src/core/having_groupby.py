@@ -18,6 +18,8 @@ class GroupBy(Minimizer):
         self.groupby_attribs = []
         self.groupby_attribs_join_reduced = []
         self.join_graph = join_graph
+        self.has_groupby = False # Shim variable for compat
+        self.group_by_attrib = [] # Shim variable for compat
         
     def doActualJob(self, args):
         self.query = self.extract_params_from_args(args)
@@ -25,11 +27,13 @@ class GroupBy(Minimizer):
         for table in self.core_relations:
             for attrib in self.all_attribs[table]:
                 has_groupby = self.check_groupby_attrib(table, attrib)
+                self.has_groupby = self.has_groupby | has_groupby
                 
                 if has_groupby:
                     self.groupby_attribs.append((table, attrib))
         
         self.groupby_attribs_join_reduced = self.join_reduce_groupby()
+        self.group_by_attrib = [g[1] for g in self.groupby_attribs_join_reduced]
         
     def init_attrib_types_dict(self):
         """Enquire the database about the types of all the attributes in each table

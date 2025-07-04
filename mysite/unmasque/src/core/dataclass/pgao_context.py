@@ -18,6 +18,9 @@ class PGAOcontext:
         self.projection_param_list = None
         self.aggregated_attributes = None
         self.orderby_string = None
+        
+        # Having SHIM
+        self.group_by_attrib2 = None
 
     @property
     def projection(self):
@@ -41,6 +44,7 @@ class PGAOcontext:
     def group_by(self, value: GroupBy):
         self.has_groupby = value.has_groupby
         self.group_by_attrib = value.group_by_attrib
+        self.group_by_attrib2 = value.groupby_attribs
 
     @property
     def aggregate(self):

@@ -130,6 +130,12 @@ class GenPipelineContext:
         self.global_attrib_types = filter_extractor.global_attrib_types
         self.global_aoa_le_predicates = aoa_extractor.aoa_predicates
         self.global_aoa_l_predicates = aoa_extractor.aoa_less_thans
+        
+        # Having content
+        self.is_having_pipeline = False
+        self.filter_predicates = []
+        self.having_predicates = []
+        self.joined_graph2 = []
 
         # methods passed by aoa extractor
         self.get_dmin_val = filter_extractor.get_dmin_val

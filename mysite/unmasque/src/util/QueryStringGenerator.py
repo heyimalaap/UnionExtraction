@@ -29,6 +29,7 @@ class QueryDetails:
         self.all_aoa = []
         self.join_edges = []
         self.or_predicates = []
+        self.having_predicates = []
 
         self.projection_names = []
         self.global_projected_attributes = []
@@ -40,6 +41,7 @@ class QueryDetails:
         self.from_op = ''
         self.where_op = ''
         self.group_by_op = ''
+        self.having_op = ''
         self.order_by_op = ''
         self.limit_op = ''
 
@@ -67,6 +69,8 @@ class QueryDetails:
         output = append_clause(output, "From", self.from_op)
         output = append_clause(output, "Where", self.where_op)
         output = append_clause(output, "Group By", self.group_by_op)
+        if len(self.having_predicates) != 0:
+            output = append_clause(output, "Having", self.having_op)
         output = append_clause(output, "Order By", self.order_by_op)
         output = append_clause(output, "Limit", self.limit_op)
         output = f"{output};"
@@ -126,6 +130,7 @@ class QueryStringGenerator:
         self._queries = {}
         self._workingCopy = QueryDetails()
         self.logger = Log("Query String Generator", connectionHelper.config.log_level)
+        self.having_predicates = []
 
     def reset(self):
         self._workingCopy = QueryDetails()
@@ -375,6 +380,17 @@ class QueryStringGenerator:
         where_clause = "\n and ".join(predicates)
         self.logger.debug(where_clause)
         return where_clause
+    
+    def __generate_having_clause(self):
+        self._workingCopy.having_predicates = self.having_predicates
+        preds = []
+        for h in self._workingCopy.having_predicates:
+            if h[3] is not None:
+                preds.append((h[0], h[1], h[2], '>=', h[3]))
+            if h[4] is not None:
+                preds.append((h[0], h[1], h[2], '<=', h[4]))
+        having_list = [f'{agg}({table}.{attrib}) {bound} {val}' for table, attrib, agg, bound, val in preds]
+        self._workingCopy.having_op = f'{" AND ".join(having_list)}'
 
     def formulate_query_string(self):
         self._workingCopy.from_op = ", ".join(self._workingCopy.core_relations)
@@ -385,6 +401,7 @@ class QueryStringGenerator:
 
     def generate_groupby_select(self):
         self.__generate_group_by_clause()
+        self.__generate_having_clause()
         self.__generate_select_clause()
 
     def backup_query_before_new_generation(self, ref_query=None):  # make new query from the last memory
@@ -401,6 +418,7 @@ class QueryStringGenerator:
         self.logger.debug(f"From: {self._workingCopy.from_op}")
         self.logger.debug(f"Where: {self._workingCopy.where_op}")
         self.logger.debug(f"Group by: {self._workingCopy.group_by_op}")
+        self.logger.debug(f'Having: {self._workingCopy.having_op}')
         self.logger.debug(f"Order by: {self._workingCopy.order_by_op}")
         self.logger.debug(f"Limit: {self._workingCopy.limit_op}")
 
