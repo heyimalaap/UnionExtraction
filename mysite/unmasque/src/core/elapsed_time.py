@@ -13,6 +13,7 @@ class ElapsedTime:
                    "Restore DB:",
                    "Correlated Sampling:",
                    "View Minimization:",
+                   "Bruteforce Minimization:",
                    "Where Clause:",
                    "Projection:",
                    "Group BY:",
@@ -21,6 +22,8 @@ class ElapsedTime:
                    "Limit:",
                    "Outer Join:",
                    "NEP: ",
+                   "Predicate Extraction:",
+                   "Predicate Separation:",
                    "Result\n Comparator:",
                    "Total: "]
 
@@ -31,6 +34,7 @@ class ElapsedTime:
 
         self.t_sampling = 0
         self.t_view_min = 0
+        self.t_bruteforce_min = 0
         self.t_where_clause = 0
         self.t_projection = 0
         self.t_groupby = 0
@@ -42,11 +46,16 @@ class ElapsedTime:
         self.t_union = 0
         self.t_from_clause = 0
         self.t_result_comp = 0
+        
+        self.t_pred_extract = 0
+        self.t_pred_seperate = 0
+
         self.t_total = 0
         self.display_string = ''
 
         self.app_sampling = 0
         self.app_view_min = 0
+        self.app_bruteforce_min = 0
         self.app_where_clause = 0
         self.app_projection = 0
         self.app_groupby = 0
@@ -58,7 +67,12 @@ class ElapsedTime:
         self.app_union = 0
         self.app_from_clause = 0
         self.app_result_comp = 0
+
+        self.app_pred_extract = 0
+        self.app_pred_seperate = 0
+
         self.app_total = 0
+        
 
     def update_for_from_clause(self, t_u, c_app):
         self.t_from_clause += t_u
@@ -107,6 +121,18 @@ class ElapsedTime:
     def update_for_view_minimization(self, t_u, c_app):
         self.t_view_min += t_u
         self.app_view_min += c_app
+        
+    def update_for_bruteforce_minimization(self, t_u, c_app):
+        self.t_bruteforce_min += t_u
+        self.app_bruteforce_min += c_app
+
+    def update_for_predicate_extraction(self, t_u, c_app):
+        self.t_pred_extract += t_u
+        self.app_pred_extract += c_app
+
+    def update_for_predicate_separation(self, t_u, c_app):
+        self.t_pred_seperate += t_u
+        self.app_pred_seperate += c_app
 
     def update_for_nep(self, t_u, c_app):
         self.t_nep += t_u
@@ -125,6 +151,9 @@ class ElapsedTime:
     def update(self, other_profile):
         self.t_sampling += other_profile.t_sampling
         self.t_view_min += other_profile.t_view_min
+        self.t_pred_extract += other_profile.t_pred_extract
+        self.t_pred_seperate += other_profile.t_pred_seperate
+        self.t_bruteforce_min += other_profile.t_bruteforce_min
         self.t_where_clause += other_profile.t_where_clause
         self.t_projection += other_profile.t_projection
         self.t_groupby += other_profile.t_groupby
@@ -133,11 +162,14 @@ class ElapsedTime:
         self.t_limit += other_profile.t_limit
         self.t_nep += other_profile.t_nep
         self.t_db_restore += other_profile.t_db_restore
-
+        
         self.app_total = other_profile.app_total
 
         self.app_sampling += other_profile.app_sampling
         self.app_view_min += other_profile.app_view_min
+        self.app_bruteforce_min += other_profile.app_bruteforce_min
+        self.app_pred_extract += other_profile.app_pred_extract
+        self.app_pred_seperate += other_profile.app_pred_seperate
         self.app_where_clause += other_profile.app_where_clause
         self.app_projection += other_profile.app_projection
         self.app_groupby += other_profile.app_groupby
@@ -200,6 +232,7 @@ class ElapsedTime:
                                                self.t_db_restore,
                                                self.t_sampling,
                                                self.t_view_min,
+                                               self.t_bruteforce_min,
                                                self.t_where_clause,
                                                self.t_projection,
                                                self.t_groupby,
@@ -208,6 +241,8 @@ class ElapsedTime:
                                                self.t_limit,
                                                self.t_outer_join,
                                                self.t_nep,
+                                               self.t_pred_extract,
+                                               self.t_pred_seperate,
                                                self.t_result_comp,
                                                self.t_total]]
 
@@ -219,6 +254,7 @@ class ElapsedTime:
                 self.app_db_restore,
                 self.app_sampling,
                 self.app_view_min,
+                self.app_bruteforce_min,
                 self.app_where_clause,
                 self.app_projection,
                 self.app_groupby,
@@ -227,6 +263,8 @@ class ElapsedTime:
                 self.app_limit,
                 self.app_outer_join,
                 self.app_nep,
+                self.app_pred_extract,
+                self.app_pred_seperate,
                 self.app_result_comp,
                 self.app_total]
         return apps

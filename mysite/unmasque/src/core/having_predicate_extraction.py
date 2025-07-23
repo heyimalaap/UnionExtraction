@@ -101,7 +101,7 @@ class PredicateExtractor(Minimizer):
                     if predicates is not None:
                         self.filter_predicates.extend(predicates)
                     continue
-
+                
                 lb = self.get_lower_bound(table, attrib)
                 ub = self.get_upper_bound(table, attrib)
                 min_val, max_val = get_min_and_max_val(self.get_datatype((table, attrib)))
@@ -383,17 +383,13 @@ class PredicateExtractor(Minimizer):
         for _, (ctid, val) in enumerate(ctid_vals):
             v = self.binary_search(table, attribute, min_val, val, 'l', ctid)
             if v <= min_val:
-                v_fmted = v
-                if type(v) is not int:
-                    v_fmted = f"'{v}'"
+                v_fmted = fmt(v)
                 qtable = self.get_fully_qualified_table_name(table)
                 self.connectionHelper.execute_sql([f"UPDATE {qtable} SET {attribute} = {v_fmted} WHERE ctid='{ctid}';"])
                 v = None
                 continue
 
-            v_fmted = v
-            if type(v) is not int:
-                v_fmted = f"'{v}'"
+            v_fmted = fmt(v)
             qtable = self.get_fully_qualified_table_name(table)
             self.connectionHelper.execute_sql([f"UPDATE {qtable} SET {attribute} = {v_fmted} WHERE ctid='{ctid}';"])
             break
@@ -430,9 +426,7 @@ class PredicateExtractor(Minimizer):
             ctid_vals = self.get_ctid_attrib_val(table, attribute, sorted=True)
             first_ctid, _ = ctid_vals[0]
 
-            lb_fmt = lb
-            if type(lb) is not int:
-                lb_fmt = f"'{lb}'"
+            lb_fmt = fmt(lb)
 
             qtable = self.get_fully_qualified_table_name(table)
             self.connectionHelper.execute_sql([f"UPDATE {qtable} SET {attribute}={lb_fmt} WHERE ctid='{first_ctid}';"])
@@ -458,17 +452,13 @@ class PredicateExtractor(Minimizer):
             ctid, val = self.get_ctid_attrib_val(table, attribute, sorted=True)[i]
             v = self.binary_search(table, attribute, val, max_val, 'r', ctid)
             if v >= max_val:
-                v_fmted = v
-                if type(v) is not int:
-                    v_fmted = f"'{v}'"
+                v_fmted = fmt(v)
                 qtable = self.get_fully_qualified_table_name(table)
                 self.connectionHelper.execute_sql([f"UPDATE {qtable} SET {attribute} = {v_fmted} WHERE ctid='{ctid}';"])
                 v = None
                 continue
 
-            v_fmted = v
-            if type(v) is not int:
-                v_fmted = f"'{v}'"
+            v_fmted = fmt(v)
             qtable = self.get_fully_qualified_table_name(table)
             self.connectionHelper.execute_sql([f"UPDATE {qtable} SET {attribute} = {v_fmted} WHERE ctid='{ctid}';"])
             break
@@ -506,9 +496,7 @@ class PredicateExtractor(Minimizer):
             ctid_vals = self.get_ctid_attrib_val(table, attribute, sorted=True)
             first_ctid, _ = ctid_vals[0]
 
-            ub_fmt = ub
-            if type(ub) is not int:
-                ub_fmt = f"'{ub}'"
+            ub_fmt = fmt(ub)
 
             qtable = self.get_fully_qualified_table_name(table)
             self.connectionHelper.execute_sql([f"UPDATE {qtable} SET {attribute}={ub_fmt} WHERE ctid='{first_ctid}';"])
@@ -590,7 +578,8 @@ class PredicateExtractor(Minimizer):
                         l = min(max_val, m_plus_one)
 
                 if attrib_type != 'date':
-                    h = int(h)
+                    h = int(math.ceil(h))
+                    
                 return h
 
 
@@ -622,7 +611,13 @@ class PredicateExtractor(Minimizer):
                 if attrib_type == 'date':
                     return l + datetime.timedelta(days=math.ceil((h - l).days / 2))
                 else:
-                    return math.ceil((l + h) / 2)
+                    if attrib_type in NUMERIC_TYPES:
+                        l = Decimal(l)
+                        h = Decimal(h)
+                    res = math.ceil((l + h) / 2)
+                    if attrib_type in NUMERIC_TYPES:
+                        res = Decimal(res)
+                    return res
 
             # Coarse search
             def coarse_search_ub(x, high):

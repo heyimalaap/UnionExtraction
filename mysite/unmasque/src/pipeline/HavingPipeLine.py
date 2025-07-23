@@ -36,6 +36,7 @@ class HavingPipeLine(ExtractionPipeLine):
             self.time_profile.update(time_profile)
             return None
         
+        self.time_profile.update(time_profile)
         self.__gen_pipeline_preprocess(core_relations)
 
         '''
@@ -85,6 +86,7 @@ class HavingPipeLine(ExtractionPipeLine):
         
         ps = PredicateSeparator(self.connectionHelper, self.genPipelineCtx, self.pgao_ctx)
         ps.doJob(query)
+        self.time_profile.update_for_predicate_separation(ps.local_elapsed_time, ps.app_calls)
 
         self.update_state(ORDER_BY + START)
         ob = OrderBy(self.connectionHelper, self.genPipelineCtx, self.pgao_ctx)
@@ -189,7 +191,7 @@ class HavingPipeLine(ExtractionPipeLine):
         self.update_state(DB_MINIMIZATION + RUNNING)
         check = bfm.doJob(query)
         self.update_state(DB_MINIMIZATION + DONE)
-        time_profile.update_for_view_minimization(bfm.local_elapsed_time, bfm.app_calls)
+        time_profile.update_for_bruteforce_minimization(bfm.local_elapsed_time, bfm.app_calls)
         if not check or not bfm.done:
             self.error = "Cannot do database minimization"
             self.logger.error(self.error)
@@ -208,8 +210,8 @@ class HavingPipeLine(ExtractionPipeLine):
         self.update_state(EQUALITY + RUNNING)
         self.equi_join = EquiJoin(self.connectionHelper, self.key_lists, self.core_relations, self.global_min_instance_dict)
         check = self.equi_join.doJob(query)
-        self.update_state(EQUALITY + DONE)
         time_profile.update_for_where_clause(self.equi_join.local_elapsed_time, self.equi_join.app_calls)
+        self.update_state(EQUALITY + DONE)
         
         """
         Group by extraction
@@ -218,6 +220,7 @@ class HavingPipeLine(ExtractionPipeLine):
         self.group_by = GroupBy(self.connectionHelper, self.core_relations, self.global_all_attribs, self.all_sizes, self.equi_join.global_join_graph2)
         self.update_state(GROUP_BY + RUNNING)
         check = self.group_by.doJob(query)
+        time_profile.update_for_group_by(self.group_by.local_elapsed_time, self.group_by.app_calls)
         self.update_state(GROUP_BY + DONE)
         
         """
@@ -225,6 +228,7 @@ class HavingPipeLine(ExtractionPipeLine):
         """
         self.pred_extraction = PredicateExtractor(self.connectionHelper, self.core_relations, self.global_all_attribs, self.group_by.attrib_types_dict, self.group_by.groupby_attribs, self.all_sizes, self.global_pk_dict, self.equi_join.global_join_graph2)
         check = self.pred_extraction.doJob(query)
+        time_profile.update_for_predicate_extraction(self.pred_extraction.local_elapsed_time, self.pred_extraction.app_calls)
         
         """
         Now that we have a database instance with just one row, to maintain compat. with the
@@ -233,6 +237,8 @@ class HavingPipeLine(ExtractionPipeLine):
         
         Filter Extraction
         """
+        self.populate_dict_info()
+
         self.update_state(FILTER + START)
         self.filter_extractor = Filter(self.connectionHelper, core_relations, self.global_min_instance_dict)
         self.update_state(FILTER + RUNNING)
@@ -279,7 +285,9 @@ class HavingPipeLine(ExtractionPipeLine):
                                        self.equi_join2.algebraic_eq_predicates, self.filter_extractor,
                                        self.global_min_instance_dict)
         self.update_state(INEQUALITY + RUNNING)
+        self.connectionHelper.begin_transaction()
         check = self.aoa.doJob(query)
+        self.connectionHelper.rollback_transaction()
         self.update_state(INEQUALITY + DONE)
         time_profile.update_for_where_clause(self.aoa.local_elapsed_time, self.aoa.app_calls)
         self.info[INEQUALITY] = self.aoa.aoa_predicates + self.aoa.aoa_less_thans + self.aoa.arithmetic_ineq_predicates
@@ -317,3 +325,14 @@ class HavingPipeLine(ExtractionPipeLine):
         self.logger.debug(self.genPipelineCtx.global_join_graph)
         self.logger.debug(self.genPipelineCtx.filter_in_predicates)
         self.logger.debug(self.genPipelineCtx.filter_attrib_dict)
+
+    def populate_dict_info(self):
+        # POPULATE MIN INSTANCE DICT
+        import pandas as pd
+        for tabname in self.core_relations:
+            self.global_min_instance_dict[tabname] = []
+            sql_query = pd.read_sql_query(self.connectionHelper.queries.get_star(tabname), self.connectionHelper.conn)
+            df = pd.DataFrame(sql_query)
+            self.global_min_instance_dict[tabname].append(tuple(df.columns))
+            for index, row in df.iterrows():
+                self.global_min_instance_dict[tabname].append(tuple(row))

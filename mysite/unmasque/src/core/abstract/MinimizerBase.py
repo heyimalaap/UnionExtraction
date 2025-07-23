@@ -82,10 +82,12 @@ class Minimizer(AppExtractorBase, ABC):
         if self.check_result_for_half(mid_ctid2, end_ctid, dirty_tab, tabname, query):
             # Take the lower half
             start_ctid = mid_ctid2
-        else:
+            return end_ctid, start_ctid
+        elif self.check_result_for_half(start_ctid, mid_ctid1, dirty_tab, tabname, query):
             # Take the upper half
             end_ctid = mid_ctid1
-        return end_ctid, start_ctid
+            return end_ctid, start_ctid
+        return None, None 
 
     def get_start_and_end_ctids(self, core_sizes, query, tabname, dirty_tab):
         self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(
@@ -112,7 +114,10 @@ class Minimizer(AppExtractorBase, ABC):
         end_page, end_row = self.get_boundary("max", dirty_tab)
         start_ctid = "(" + str(start_page) + "," + str(start_row) + ")"
         end_ctid = "(" + str(end_page) + "," + str(end_row) + ")"
-        mid_ctid1, mid_ctid2 = mid_ctid_calculate_shortcut(core_sizes[tabname])
+        # mid_ctid1, mid_ctid2 = mid_ctid_calculate_shortcut(core_sizes[tabname])
+        mid_page = int((start_page + end_page) / 2)
+        mid_ctid1 = "(" + str(mid_page) + ",1)"
+        mid_ctid2 = "(" + str(mid_page) + ",2)"
         if start_ctid == mid_ctid1:
             mid_ctid1, mid_ctid2 = self.determine_mid_ctid_from_db(dirty_tab)
         return end_ctid, mid_ctid1, mid_ctid2, start_ctid

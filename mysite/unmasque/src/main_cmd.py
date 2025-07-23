@@ -476,12 +476,69 @@ where
         and ps_availqty > (select min(c_acctbal) from customer)
 order by
         s_name;""", False, False, False, False),
-                     TestQuery("testing", """select sum(l_extendedprice * (1 - l_discount)) as revenue, o_orderdate, o_shippriority 
+                     TestQuery("testing2", """SELECT
+    c_mktsegment AS customer_segment,
+    AVG(o_totalprice) AS average_order_price
+FROM
+    customer c
+JOIN
+    orders o ON c.c_custkey = o.o_custkey
+WHERE
+    c_nationkey = 13
+GROUP BY
+    c_mktsegment
+HAVING
+    AVG(o_totalprice) > 200;
+""", False, False, False, False),
+                     TestQuery("testing2", """select l_shipdate, sum(l_extendedprice * (1 - l_discount)) as revenue from lineitem l1 where l_shipdate > date '1995-03-15' and l_tax >= -2 and (select avg(l_discount) from lineitem l2 where l1.l_shipdate = l2.l_shipdate Group By l_shipdate) <= 0.5
+     Group By l_shipdate
+     Order by revenue desc, l_shipdate 
+     Limit 10;""", False, False, False, False),
+                     TestQuery("testing2", """SELECT
+    n_name,
+    SUM(o_totalprice) AS total_revenue
+FROM
+    customer c
+JOIN
+    orders o ON c.c_custkey = o.o_custkey
+JOIN
+    nation n ON c.c_nationkey = n.n_nationkey
+GROUP BY
+    n_name
+HAVING
+    SUM(o_totalprice) > 0;""", False, False, False, False),
+                     TestQuery("testing", """SELECT 
+    l_shipdate AS return_flag,
+    sum(l_extendedprice) AS total_extended_price,
+    SUM(l_discount) AS total_tax
+FROM 
+    lineitem
+WHERE 
+    l_quantity <= 10
+GROUP BY 
+    l_shipdate
+HAVING 
+    sum(l_extendedprice) >= 6000 
+ AND AVG(l_discount) BETWEEN 0 AND 25;""", False, False, False, False),
+
+                     TestQuery("testing2", """select l_shipdate, sum(l_extendedprice * (1 - l_discount)) as revenue from lineitem where l_shipdate > date '1995-03-15' and l_tax >= -2
+     Group By l_shipdate
+     having avg(l_discount) <= 0.5
+     Order by revenue desc, l_shipdate 
+     Limit 10;""", False, False, False, False),
+                     TestQuery("testing2", """select sum(l_extendedprice * (1 - l_discount)) as revenue, o_orderdate, o_shippriority 
+     From customer, orders, lineitem 
+     Where c_custkey = o_custkey and l_orderkey = o_orderkey and 
+     o_orderdate < date '1995-03-15' and l_shipdate > date '1995-03-15' and l_tax >= -2 and o_totalprice >= 8000.0 and l_discount <= 0.5 
+     Group By o_orderdate, o_shippriority 
+     Order by revenue desc, o_orderdate 
+     Limit 10;""", False, False, False, False),
+     TestQuery("testing1", """select sum(l_extendedprice * (1 - l_discount)) as revenue, o_orderdate, o_shippriority 
      From customer, orders, lineitem 
      Where c_custkey = o_custkey and l_orderkey = o_orderkey and 
      o_orderdate < date '1995-03-15' and l_shipdate > date '1995-03-15' and l_tax >= -2
      Group By o_orderdate, o_shippriority 
-     having avg(o_totalprice) >= 8000.0 and avg(l_discount) <= 0.5
+     having avg(o_totalprice) >= 8000.0 and sum(l_discount) <= 0.5 and sum(l_discount) >= 0
      Order by revenue desc, o_orderdate 
      Limit 10;""", False, False, False, False)
 
